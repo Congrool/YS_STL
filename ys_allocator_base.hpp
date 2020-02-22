@@ -2,6 +2,7 @@
 #define _YS_ALLOCATOR_BASE_H
 
 #include<bits/c++config.h>
+#include<iostream>
 
 namespace YS_STL{
 

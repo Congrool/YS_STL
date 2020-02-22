@@ -12,7 +12,7 @@ namespace YS_STL{
 
   template<typename _Tp, typename... _Args>
     inline void _construct(_Tp* _p,_Args&&... _args){
-        ::new(static_cast<void*>(_p)) _Tp(_args);
+        ::new(static_cast<void*>(_p)) _Tp(_args...);
     }
   
   template<typename _Tp>

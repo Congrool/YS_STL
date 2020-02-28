@@ -1,5 +1,5 @@
 #ifndef _YS_ALLOCATOR_BASE_H
-#define _YS_ALLOCATOR_BASE_H
+#define _YS_ALLOCATOR_BASE_H 1
 
 #include<bits/c++config.h>
 #include<iostream>
@@ -67,7 +67,7 @@ namespace YS_STL{
         }
 
         template<typename _Up, typename... _Args>
-        void contruct(_Up* _p, _Args&&... _args){
+        void construct(_Up* _p, _Args&&... _args){
             ::new((void*)_p) _Up(std::forward<_Args>(_args)...);
         }
 

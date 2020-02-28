@@ -1,8 +1,8 @@
 #ifndef _YS_CONSTRUCT_H
 #define _YS_CONSTRUCT_H 1
 
-#include "new"
-#include "type_traits"
+#include <new>
+#include <type_traits>
 #include "ys_iterator_base_types.hpp"
 
 namespace YS_STL{
@@ -36,7 +36,7 @@ namespace YS_STL{
    * invoke the destructor
    */
   template<>
-    struct _Destory_aux<true>{
+    struct _Destory_aux<false>{
         template<typename ForwardIterator>
           static void __destory(ForwardIterator _first, ForwardIterator _last){
               for(; _first != _last; ++_first)
@@ -48,7 +48,7 @@ namespace YS_STL{
   template<typename ForwardIterator>
     inline void _destory(ForwardIterator _first, ForwardIterator _last){
         typedef typename iterator_traits<ForwardIterator>::value_type   _value_type;
-        _Destory_aux<__has_trivial_destructor(_value_type)>::__destory(_first,_last);
+        _Destory_aux<std::is_trivially_destructible<_value_type>::value>::__destory(_first,_last);
     }
   
   // the following two functions needn't be defined I guess

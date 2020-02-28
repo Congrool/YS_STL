@@ -2,6 +2,8 @@
 #define _ITERATOR_H 1
 
 #include "ys_iterator_base_types.hpp"
+#include "ys_iterator_base_funcs.hpp"
+
 
 namespace YS_STL{
 
@@ -16,7 +18,7 @@ namespace YS_STL{
     // _Iterator type should override +=, -=, +, -, ++, --, *, ==, <
     template<typename _Iterator>
     class reverse_iterator
-    : public iterator<typename iterator_traits<_Iterator>::iterator_category,
+    : public iterator_base<typename iterator_traits<_Iterator>::iterator_category,
         typename iterator_traits<_Iterator>::value_type,
         typename iterator_traits<_Iterator>::difference_type,
         typename iterator_traits<_Iterator>::pointer,
@@ -29,7 +31,7 @@ namespace YS_STL{
         
         public:
             typedef _Iterator                               iterator_type;
-            typedef typename __traits_type::difference_type difference;
+            typedef typename __traits_type::difference_type difference_type;
             typedef typename __traits_type::pointer         pointer;
             typedef typename __traits_type::reference       reference;
 
@@ -39,7 +41,7 @@ namespace YS_STL{
             explicit
             reverse_iterator(iterator_type _x) : current(_x) { }
 
-            reverse_iterator(const reverse_iterator& _x) : current(_x) { }
+            reverse_iterator(const reverse_iterator& _x) : current(_x.base()) { }
 
             template<typename _Iter>
             reverse_iterator(const reverse_iterator<_Iter>& _x) : current(_x.base()) { }
@@ -225,26 +227,20 @@ namespace YS_STL{
               return __normal_iterator(_current--);
           }
 
-          __normal_iterator&
-          operator+=(difference_type _diff){
-              _current += _diff;
-              return *this;
-          }
-
           __normal_iterator
           operator+(difference_type _diff){
               return __normal_iterator(_current + _diff);
           }
 
-          __normal_iterator
-          operator-(difference_type _diff){
-              return __normal_iterator(_current - _diff);
-          }
-
           __normal_iterator&
           operator+=(difference_type _diff){
               _current += _diff;
               return *this;
+          }
+
+          __normal_iterator
+          operator-(difference_type _diff){
+              return __normal_iterator(_current - _diff);
           }
 
           __normal_iterator&
@@ -308,8 +304,166 @@ namespace YS_STL{
         { return _lhs.base() - _rhs.base(); }
 }
 
-/**
- * move_iterator class to code
- */
+
+
+namespace YS_STL{
+    template<typename _Iterator>
+    class move_iterator
+    {
+      protected:
+        _Iterator _M_current;  
+        typedef iterator_traits<_Iterator> _traits_type;
+        typedef typename _traits_type::reference _base_ref;
+
+      public:
+        typedef _Iterator                                   iterator_type;
+        typedef typename _traits_type::iterator_category    iterator_category;
+        typedef typename _traits_type::value_type           value_type;
+        typedef typename _traits_type::difference_type      difference_type;
+        typedef typename _traits_type::pointer              pointer;
+
+        // If _base_ref is l-reference or r-reference, reference is r-reference.
+        // Otherwise reference is _base_ref. ?? How can be otherwise ?
+        // It's the key of move_iterator class design.
+        typedef typename std::conditional<std::is_reference<_base_ref>::value,
+                        typename std::remove_reference<_base_ref>::type&&,
+                        _base_ref>::type                    reference;
+        
+        move_iterator() : _M_current() { }
+
+        explicit
+        move_iterator(iterator_type _i) : _M_current(_i) { }
+
+        template<typename _Iter>
+        move_iterator(const move_iterator<_Iter>& _i) : _M_current(_i.base()) { }
+
+        iterator_type
+        base() const
+        { return _M_current; }
+
+        reference
+        operator*() const
+        { return static_cast<reference>(*_M_current); }
+
+        pointer
+        operator->() const
+        { return _M_current; }
+        
+        move_iterator&
+        operator++(){ 
+            ++_M_current; 
+            return *this;
+        }
+
+        move_iterator
+        operator++(int){
+            move_iterator _tmp(*this);
+            ++_M_current;
+            return _tmp;
+        }
+
+        move_iterator&
+        operator--(){
+            --_M_current;
+            return *this;
+        }
+
+        move_iterator
+        operator--(int){
+            move_iterator _tmp;
+            --_M_current;
+            return _tmp;
+        }
+
+        move_iterator
+        operator+(difference_type _n) const{
+            return move_iterator(_M_current + _n);
+        }
+
+        move_iterator&
+        operator+=(difference_type _n) {
+            _M_current += _n;
+            return *this;
+        }
+
+        move_iterator
+        operator-(difference_type _n) const{
+            return move_iterator(_M_current - _n);
+        }
+
+        move_iterator&
+        operator-=(difference_type _n){
+            _M_current -= _n;
+            return *this;
+        }
+
+        reference
+        operator[](difference_type _n) const{
+            return move(_M_current[_n]);
+        }
+    };
+
+    template<typename _Iterator>
+    inline bool
+    operator==(const move_iterator<_Iterator>& _x,
+            const move_iterator<_Iterator>& _y){
+        return _x.base() == _y.base();
+    }
+
+    template<typename _Iterator>
+    inline bool
+    operator!=(const move_iterator<_Iterator>& _x,
+            const move_iterator<_Iterator>& _y){
+        return !(_x == _y);
+    }
+
+    template<typename _Iterator>
+    inline bool
+    operator<(const move_iterator<_Iterator>& _x,
+            const move_iterator<_Iterator>& _y){
+        return _x.base() < _y.base();
+    }
+
+    template<typename _Iterator>
+    inline bool
+    operator>(const move_iterator<_Iterator>& _x,
+            const move_iterator<_Iterator>& _y){
+        return _y < _x;
+    }
+
+    template<typename _Iterator>
+    inline bool
+    operator<=(const move_iterator<_Iterator>& _x,
+            const move_iterator<_Iterator>& _y){
+        return !(_x > _y);
+    }
+
+    template<typename _Iterator>
+    inline bool
+    operator>=(const move_iterator<_Iterator>& _x,
+            const move_iterator<_Iterator>& _y){
+        return !(_x < _y);
+    }
+
+    template<typename _Iterator>
+    inline move_iterator<_Iterator>
+    make_move_iterator(_Iterator _i){
+        return move_iterator<_Iterator>(_i);
+    }
+
+    // If iterator_traits<_Iterator>::value_type has copy constructor
+    // but don't have move constructor, return _Iterator
+    // else return move_iterator<_Iterator>
+    template<typename _Iterator,typename _ReturnType = 
+      typename std::conditional<std::__and_<
+          std::__not_<std::is_nothrow_move_constructible<typename iterator_traits<_Iterator>::value_type>>,
+          std::is_copy_constructible<typename iterator_traits<_Iterator>::value_type>>::value,
+      _Iterator, move_iterator<_Iterator>>::type>
+    _ReturnType inline
+    _make_move_if_noexcept_iterator(_Iterator _i) 
+    {
+        return _ReturnType(_i);
+    }
+}   
 
 #endif

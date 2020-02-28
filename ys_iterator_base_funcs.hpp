@@ -79,8 +79,8 @@ namespace YS_STL{
     inline _InputIterator
     next(_InputIterator _i, 
         typename iterator_traits<_InputIterator>::difference_type _n = 1){
-        advance(i,n);
-        return i;
+        advance(_i,_n);
+        return _i;
     }
 
     template<typename _BidirectionalIterator>

@@ -24,7 +24,7 @@ namespace YS_STL{
      */
     template<typename _Category, typename _Tp, typename _Distance = std::ptrdiff_t,
              typename _Pointer = _Tp*, typename _Reference = _Tp&>
-      struct iterator{
+      struct iterator_base{
           typedef _Category     iterator_category;
           typedef _Tp           value_type;
           typedef _Distance     difference_type;
@@ -32,21 +32,47 @@ namespace YS_STL{
           typedef _Reference    reference;
       };
 
+    // if _Iterator doesn't has iterator_category and other attributes
+    // using the following template instantation
+    template<typename _Iterator, typename = std::__void_t<>>
+      struct __iterator_traits { };
+
     template<typename _Iterator>
-      struct iterator_traits{
+      struct __iterator_traits<_Iterator,
+                    std::__void_t<typename _Iterator::iterator_category,
+                                typename _Iterator::value_type,
+                                typename _Iterator::difference_type,
+                                typename _Iterator::pointer,
+                                typename _Iterator::reference>>
+      {
           typedef typename _Iterator::iterator_category     iterator_category;
           typedef typename _Iterator::value_type            value_type;
           typedef typename _Iterator::difference_type       difference_type;
           typedef typename _Iterator::pointer               pointer;
           typedef typename _Iterator::reference             reference;
       };
+
+
+    template<typename _Iterator>
+      struct iterator_traits : public __iterator_traits<_Iterator> { };
+
+    template<typename _Tp>
+      struct iterator_traits<_Tp*>
+      {
+          typedef random_access_iterator_tag    iterator_category;
+          typedef _Tp                           value_type;
+          typedef ptrdiff_t                     difference_type;
+          typedef const _Tp*                    pointer;
+          typedef const _Tp&                    reference;
+      };
     
 
     // if _InIter is not a InputIterator or can't convert to InputIterator
     // compile error occurs.
+    // if_Inter is pod type, typename iterator_traits<_Inter>::iterator_category is void
     template<typename _InIter>
         using _RequireInputIter = typename std::enable_if<
-                std::is_convertible<typename iterator_traits<_Inter>::iterator_category,
+                std::is_convertible<typename iterator_traits<_InIter>::iterator_category,
                     input_iterator_tag>::value>::type;
 }
 
